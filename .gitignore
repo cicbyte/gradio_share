@@ -25,3 +25,4 @@ go.work.sum
 .claude/
 CLAUDE.md
 *.exe
+frpc/

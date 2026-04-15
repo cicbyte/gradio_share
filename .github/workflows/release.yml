@@ -27,17 +27,20 @@ jobs:
         run: |
           mkdir -p dist
 
-          # 定义构建矩阵: goos goarch ext archive_cmd
+          # 定义构建矩阵（逗号分隔: goos,goarch,archive）
           targets=(
-            "windows amd64 .exe  zip"
-            "linux   amd64      tar.gz"
-            "linux   arm64      tar.gz"
-            "darwin  amd64      tar.gz"
-            "darwin  arm64      tar.gz"
+            "windows,amd64,zip"
+            "linux,amd64,tar.gz"
+            "linux,arm64,tar.gz"
+            "darwin,amd64,tar.gz"
+            "darwin,arm64,tar.gz"
           )
 
           for target in "${targets[@]}"; do
-            read -r goos goarch ext archive <<< "$target"
+            IFS=',' read -r goos goarch archive <<< "$target"
+
+            # Windows 可执行文件后缀 .exe
+            if [ "$goos" = "windows" ]; then ext=".exe"; else ext=""; fi
             name="gradio_share_${goos}_${goarch}"
             pkg_dir="dist/${name}"
 
