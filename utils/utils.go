@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -41,9 +40,3 @@ func GuessFrpcBinaryName() string {
 	return fmt.Sprintf("frpc_%s_%s", platform, arch)
 }
 
-// printUsage 打印帮助信息
-func PrintUsage() {
-	fmt.Fprintf(flag.CommandLine.Output(), "使用方法: %s [选项]\n", flag.CommandLine.Name())
-	fmt.Fprintln(flag.CommandLine.Output(), "选项:")
-	flag.PrintDefaults()
-}
