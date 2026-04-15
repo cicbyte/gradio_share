@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+env:
+  FRP_VERSION: "0.44.0"
+  GO_VERSION: "1.21"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+
+      - name: Build all platforms
+        run: |
+          mkdir -p dist
+
+          # 定义构建矩阵: goos goarch ext archive_cmd
+          targets=(
+            "windows amd64 .exe  zip"
+            "linux   amd64      tar.gz"
+            "linux   arm64      tar.gz"
+            "darwin  amd64      tar.gz"
+            "darwin  arm64      tar.gz"
+          )
+
+          for target in "${targets[@]}"; do
+            read -r goos goarch ext archive <<< "$target"
+            name="gradio_share_${goos}_${goarch}"
+            pkg_dir="dist/${name}"
+
+            # 交叉编译 Go 二进制
+            CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch \
+              go build -ldflags="-s -w" -o "${pkg_dir}/gradio_share${ext}" .
+
+            # 下载对应平台的 frpc
+            frp_pkg="frp_${FRP_VERSION}_${goos}_${goarch}"
+            frp_url="https://github.com/fatedier/frp/releases/download/v${FRP_VERSION}/${frp_pkg}.tar.gz"
+            curl -sL "$frp_url" | tar xz -C /tmp
+
+            cp "/tmp/${frp_pkg}/frpc${ext}" "${pkg_dir}/frpc${ext}"
+            chmod +x "${pkg_dir}/frpc${ext}" 2>/dev/null || true
+
+            # 打包
+            if [ "$archive" = "zip" ]; then
+              (cd dist && zip -r "${name}.zip" "${name}/")
+            else
+              (cd dist && tar czf "${name}.tar.gz" "${name}/")
+            fi
+
+            echo "✓ ${name}.${archive}"
+          done
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ steps.version.outputs.tag }}
+          generate_release_notes: true
+          files: dist/*.zip dist/*.tar.gz
