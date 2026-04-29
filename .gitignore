@@ -26,3 +26,4 @@ go.work.sum
 CLAUDE.md
 *.exe
 frpc/
+.reference/

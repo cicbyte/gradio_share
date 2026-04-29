@@ -1,69 +1,79 @@
-# Go语言编写的Gradio隧道设置脚本
+# gradio_share
 
-本项目灵感来源于Gradio程序的Shared URL功能，它使用frpc代理服务来创建一个隧道，从而允许用户通过互联网访问Gradio应用程序。
-本项目将上述功能移植到go中,通过一条命令即可将本地端口暴露到互联网中,实现远程访问。
+> 一条命令，将本地端口暴露到公网 — 复用 Gradio 免费隧道服务，无需注册、无需配置。
 
-## 目录
+[English](README_en.md) | **中文**
 
-- [特性](#特性)
-- [先决条件](#先决条件)
-- [安装](#安装)
-- [使用说明](#使用说明)
-- [参考](#参考)
+![CI](https://img.shields.io/github/actions/workflow/status/cicbyte/gradio_share/ci.yml?branch=master&style=flat-square) ![Release](https://img.shields.io/github/v/release/cicbyte/gradio_share?style=flat-square) ![License](https://img.shields.io/github/license/cicbyte/gradio_share?style=flat-square) ![Go Version](https://img.shields.io/github/go-mod/go-version/cicbyte/gradio_share?style=flat-square)
 
-## 特性
+## 功能特性
 
-- 从Gradio API服务器获取远程主机和端口信息。
-- 启动隧道并打印用于访问的公网URL。
-- 确保隧道运行指定的持续时间或直到手动停止。
+- **零配置** — 自动获取远程 frp 服务器，无需注册账号
+- **一条命令** — 启动即可获得公网 URL，如 `https://xxx.gradio.live`
+- **多平台** — 支持 Windows / macOS / Linux，amd64 和 arm64
+- **72 小时有效** — 生成的公网 URL 可持续使用 72 小时
 
-## 先决条件
+## 快速开始
 
-- Go语言环境
-- 网络连接，用于访问Gradio API服务器
-- 执行二进制文件和访问网络资源的适当权限
+### 从 Release 下载
 
-## 安装
+前往 [Releases](https://github.com/cicbyte/gradio_share/releases) 下载对应平台的压缩包，解压后直接运行。
 
-1. 克隆仓库到本地：
+### 从源码构建
+
 ```bash
-git clone https://github.com/MaterialShadow/gradio_share.git
+git clone https://github.com/cicbyte/gradio_share.git
+cd gradio_share
+go build -o gradio_share .
 ```
 
-2.编译
+## 使用方法
+
 ```bash
-go build -o gradio-tunnel
+# 默认转发 localhost:8085
+./gradio_share
+
+# 指定端口
+./gradio_share --port 3000
+
+# 使用短参数
+./gradio_share -p 3000 -a https://api.gradio.app/v2/tunnel-request
+
+# 查看帮助
+./gradio_share --help
 ```
 
-## 使用说明
-### 所有参数
-```bash
-gradio-tunnel.exe -h
+### 参数说明
 
--address string
-        分享服务器地址 (default "https://api.gradio.app/v2/tunnel-request")
-  -binPath string
-        frpc程序路径,默认查找可执行文件同级的bin目录 (default "bin/frpc_windows_amd64.exe")
-  -port int
-        定义要转发的端口 (default 8080)
+| 参数 | 短参数 | 类型 | 默认值 | 说明 |
+|------|--------|------|--------|------|
+| `--port` | `-p` | int | `8085` | 要转发的本地端口 |
+| `--address` | `-a` | string | `https://api.gradio.app/v2/tunnel-request` | Gradio 分享服务器地址 |
+| `--binPath` | `-b` | string | 自动检测 | frpc 二进制文件路径 |
+
+### 输出示例
+
 ```
-
-### 使用示例
-linux等环境需要将frpc和主程序添加可执行权限`chmod +x xxx`
-
-```bash
-gradio-tunnel.exe -port 8081
-2024/06/25 17:34:30 frpc程序路径:D:\tools\gradio_tunnel\bin\frpc_windows_amd64.exe
-2024/06/25 17:34:30 分享服务器地址:https://api.gradio.app/v2/tunnel-request
+$ ./gradio_share --port 8081
+2024/06/25 17:34:30 frpc程序路径: /usr/local/bin/gradio_share/bin/frpc_linux_amd64
+2024/06/25 17:34:30 分享服务器地址: https://api.gradio.app/v2/tunnel-request
 2024/06/25 17:34:30 安全令牌: mpJfo24vVB-QGtvXTi1o-2hp5rptbD0i71etVCD_NFU=
-2024/06/25 17:34:30 连接到分享服务器: https://api.gradio.app/v2/tunnel-request
 2024/06/25 17:34:31 转发的端口:8081
-2024/06/25 17:34:31 Reading from stream...
-2024/06/25 17:34:32 Read operation completed.
-2024/06/25 17:34:32 开启代理完成
-2024/06/25 17:34:32 访问地址:https://6cb818bca414994400.gradio.live
+2024/06/25 17:34:32 访问地址：https://6cb818bca414994400.gradio.live
 2024/06/25 17:34:32 连接有效期:72小时
 ```
 
-### 参考
-部分逻辑参考[gradio-tunneling](https://pypi.org/project/gradio-tunneling/)实现
+## 工作原理
+
+1. 调用 Gradio API 获取远程 frp 服务器地址
+2. 使用对应平台的 frpc 二进制建立隧道
+3. 从 frpc 输出中解析公网 URL
+4. 保持隧道运行 72 小时
+
+## 参考
+
+部分逻辑参考 [gradio-tunneling](https://pypi.org/project/gradio-tunneling/) 实现。
+
+## 许可证
+
+[MIT](LICENSE)
